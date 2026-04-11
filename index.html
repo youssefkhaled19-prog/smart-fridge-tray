@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>FridgeWatch — Smart Tray Monitor</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Syne:wght@400;600;700;800&family=Inter:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0a0f1e; --surface: #111827; --surface2: #1c2535;
+    --border: rgba(255,255,255,0.07); --border2: rgba(255,255,255,0.13);
+    --text: #f0f4ff; --muted: #8b95b0;
+    --accent: #4fffb0; --accent-dim: rgba(79,255,176,0.12);
+    --danger: #ff5f6d; --danger-dim: rgba(255,95,109,0.12);
+    --warn: #ffc857; --blue: #60a5fa;
+    --radius: 14px; --radius-sm: 8px;
+  }
+  body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; min-height: 100vh; }
+  header { display: flex; align-items: center; justify-content: space-between; padding: 1.25rem 2rem; border-bottom: 1px solid var(--border); background: var(--surface); position: sticky; top: 0; z-index: 100; }
+  .logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.25rem; color: var(--accent); }
+  .logo span { color: var(--text); }
+  .status-dot { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); transition: background 0.4s; }
+  .dot.online { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+  .dot.offline { background: var(--danger); }
+  main { max-width: 700px; margin: 0 auto; padding: 2rem 1.5rem; display: flex; flex-direction: column; gap: 1.5rem; }
+  .alert-banner { border-radius: var(--radius-sm); padding: 1rem 1.25rem; display: none; align-items: center; gap: 12px; font-size: 14px; font-weight: 500; background: var(--danger-dim); border: 1px solid rgba(255,95,109,0.3); color: var(--danger); }
+  .alert-banner.show { display: flex; }
+  .alert-dismiss { margin-left: auto; background: none; border: none; color: inherit; cursor: pointer; font-size: 18px; opacity: 0.6; }
+  .alert-dismiss:hover { opacity: 1; }
+  .hero-card { background: var(--surface); border: 1px solid var(--border2); border-radius: var(--radius); padding: 2rem; }
+  .hero-label { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.5rem; }
+  .hero-count { font-family: 'Syne', sans-serif; font-size: clamp(4rem, 12vw, 7rem); font-weight: 800; line-height: 1; letter-spacing: -0.04em; color: var(--accent); transition: color 0.4s; }
+  .hero-count.danger { color: var(--danger); }
+  .hero-sub { font-size: 14px; color: var(--muted); margin-top: 0.5rem; }
+  .stats-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 1rem 1.25rem; }
+  .stat-label { font-family: 'DM Mono', monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 0.4rem; }
+  .stat-val { font-family: 'Syne', sans-serif; font-size: 1.5rem; font-weight: 700; }
+  .tray-section { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; }
+  .section-title { font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 1.25rem; }
+  .tray-grid { display: flex; gap: 16px; }
+  .tray-slot { width: 80px; height: 80px; border-radius: 12px; border: 1.5px solid var(--border2); background: var(--surface2); transition: all 0.3s ease; position: relative; }
+  .tray-slot.filled { background: var(--accent-dim); border-color: var(--accent); }
+  .tray-slot.filled::after { content: ''; position: absolute; inset: 12px; border-radius: 6px; background: var(--accent); opacity: 0.7; }
+  .tray-slot.danger-slot.filled { background: var(--danger-dim); border-color: var(--danger); }
+  .tray-slot.danger-slot.filled::after { background: var(--danger); }
+  .notif-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; }
+  .notif-list { display: flex; flex-direction: column; gap: 8px; margin-top: 1rem; max-height: 200px; overflow-y: auto; }
+  .notif-item { display: flex; align-items: center; gap: 10px; padding: 0.6rem 1rem; border-radius: var(--radius-sm); font-size: 13px; background: var(--surface2); border: 1px solid var(--border); }
+  .notif-item.danger { border-color: rgba(255,95,109,0.25); color: var(--danger); }
+  .notif-item.ok { border-color: rgba(79,255,176,0.2); color: var(--accent); }
+  .notif-time { margin-left: auto; font-family: 'DM Mono', monospace; font-size: 11px; opacity: 0.5; flex-shrink: 0; }
+  .empty-notif { font-size: 13px; color: var(--muted); padding: 0.5rem 0; text-align: center; }
+  .controls { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.5rem; }
+  .ctrl-group { display: flex; flex-direction: column; gap: 8px; }
+  .ctrl-label { font-size: 13px; color: var(--muted); }
+  .ctrl-row { display: flex; gap: 8px; align-items: center; }
+  input[type="number"] { background: var(--surface2); border: 1px solid var(--border2); border-radius: var(--radius-sm); color: var(--text); padding: 0.5rem 0.75rem; font-family: 'DM Mono', monospace; font-size: 14px; width: 90px; outline: none; }
+  input[type="number"]:focus { border-color: var(--accent); }
+  .btn { background: var(--accent-dim); border: 1px solid rgba(79,255,176,0.3); border-radius: var(--radius-sm); color: var(--accent); padding: 0.5rem 1rem; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+  .btn:hover { background: rgba(79,255,176,0.2); }
+  .footer { text-align: center; font-family: 'DM Mono', monospace; font-size: 12px; color: var(--muted); padding-bottom: 2rem; }
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">Fridge<span>Watch</span></div>
+  <div class="status-dot">
+    <div class="dot" id="conn-dot"></div>
+    <span id="conn-label">Connecting…</span>
+  </div>
+</header>
+<main>
+  <div class="alert-banner" id="alert-banner">
+    <span>⚠</span>
+    <span id="alert-text">Low stock!</span>
+    <button class="alert-dismiss" onclick="dismissAlert()">✕</button>
+  </div>
+
+  <div class="hero-card">
+    <div class="hero-label">Items on tray</div>
+    <div class="hero-count" id="hero-count">—</div>
+    <div class="hero-sub" id="hero-sub">Waiting for device…</div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-label">Threshold</div>
+      <div class="stat-val" id="stat-threshold" style="color: var(--warn)">—</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Alerts sent</div>
+      <div class="stat-val" id="stat-alerts" style="color: var(--blue)">0</div>
+    </div>
+  </div>
+
+  <div class="tray-section">
+    <div class="section-title">Tray overview (max 3 slots)</div>
+    <div class="tray-grid" id="tray-grid"></div>
+  </div>
+
+  <div class="notif-panel">
+    <div class="section-title">Notification log</div>
+    <div class="notif-list" id="notif-list">
+      <div class="empty-notif" id="notif-empty">No notifications yet</div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <div class="section-title">Settings</div>
+    <div class="ctrl-group" style="margin-top:1rem">
+      <div class="ctrl-label">Alert threshold (items)</div>
+      <div class="ctrl-row">
+        <input type="number" id="threshold-input" min="1" max="3" value="2" />
+        <button class="btn" onclick="updateThreshold()">Apply</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">Last update: <span id="last-updated">—</span></div>
+</main>
+
+<script>
+const SERVER_URL = 'https://smart-fridge-tray-production.up.railway.app';
+const WS_URL = 'wss://smart-fridge-tray-production.up.railway.app';
+
+let state = { count: 0, weight_g: 0, low_stock: false, threshold: 2, connected: false };
+let alertDismissed = false;
+let alertCount = 0;
+let prevLow = false;
+
+function connectWS() {
+  const ws = new WebSocket(WS_URL);
+  ws.onopen = () => setConnection(true);
+  ws.onmessage = (e) => {
+    try {
+      const msg = JSON.parse(e.data);
+      if (msg.type === 'update' && msg.data) updateState(msg.data);
+      else if (msg.type === 'device_status') setConnection(msg.connected);
+    } catch {}
+  };
+  ws.onclose = () => { setConnection(false); setTimeout(connectWS, 3000); };
+  ws.onerror = () => ws.close();
+}
+
+function updateState(data) {
+  const wasLow = state.low_stock;
+  state = { ...state, ...data };
+
+  const countEl = document.getElementById('hero-count');
+  countEl.textContent = state.count;
+  countEl.className = 'hero-count' + (state.low_stock ? ' danger' : '');
+
+  document.getElementById('hero-sub').textContent = 'threshold: ' + state.threshold + ' items';
+  document.getElementById('stat-threshold').textContent = state.threshold;
+
+  renderTray();
+
+  if (state.low_stock && !alertDismissed) {
+    document.getElementById('alert-banner').className = 'alert-banner show';
+    document.getElementById('alert-text').textContent = 'Low stock! Only ' + state.count + ' item(s) remaining — refill soon.';
+    if (!wasLow) {
+      alertCount++;
+      document.getElementById('stat-alerts').textContent = alertCount;
+      addNotification('danger', '⚠ Low stock! Only ' + state.count + ' item(s) left.');
+    }
+  } else if (!state.low_stock) {
+    document.getElementById('alert-banner').classList.remove('show');
+    alertDismissed = false;
+    if (wasLow) addNotification('ok', '✓ Stock refilled — ' + state.count + ' items on tray.');
+  }
+
+  document.getElementById('last-updated').textContent = new Date().toLocaleTimeString();
+}
+
+function renderTray() {
+  const grid = document.getElementById('tray-grid');
+  grid.innerHTML = '';
+  for (let i = 0; i < 3; i++) {
+    const slot = document.createElement('div');
+    slot.className = 'tray-slot' + (i < state.count ? (' filled' + (state.low_stock ? ' danger-slot' : '')) : '');
+    grid.appendChild(slot);
+  }
+}
+
+function setConnection(online) {
+  document.getElementById('conn-dot').className = 'dot ' + (online ? 'online' : 'offline');
+  document.getElementById('conn-label').textContent = online ? 'Device online' : 'Device offline';
+}
+
+function dismissAlert() { alertDismissed = true; document.getElementById('alert-banner').classList.remove('show'); }
+
+function addNotification(type, text) {
+  document.getElementById('notif-empty')?.remove();
+  const list = document.getElementById('notif-list');
+  const item = document.createElement('div');
+  item.className = 'notif-item ' + type;
+  item.innerHTML = '<span>' + text + '</span><span class="notif-time">' + new Date().toLocaleTimeString() + '</span>';
+  list.prepend(item);
+  if (list.querySelectorAll('.notif-item').length > 20) list.lastElementChild.remove();
+}
+
+async function updateThreshold() {
+  const val = parseInt(document.getElementById('threshold-input').value);
+  if (isNaN(val) || val < 1) return;
+  try {
+    await fetch(SERVER_URL + '/api/threshold', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ value: val }) });
+    addNotification('ok', '✓ Threshold updated to ' + val + ' items.');
+  } catch (e) {
+    addNotification('danger', '⚠ Failed to update threshold.');
+  }
+}
+
+renderTray();
+connectWS();
+</script>
+</body>
+</html>
