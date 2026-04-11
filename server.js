@@ -17,7 +17,7 @@ let latestData = {
 const app = express();
 app.use(cors());
 app.use(express.json());
-app.use(express.static('C:\\Users\\admin\\Desktop\\fridgewatch\\webapp'));
+app.use(express.static('webapp'));
 
 app.get('/api/status', (req, res) => res.json(latestData));
 
