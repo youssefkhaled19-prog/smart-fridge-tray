@@ -9,7 +9,7 @@ let latestData = {
   count: 0,
   weight_g: 0,
   low_stock: false,
-  threshold: 3,
+  threshold: 1,
   timestamp: null,
   connected: false,
 };
