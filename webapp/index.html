@@ -192,17 +192,6 @@ function addNotification(type, text) {
   if (list.querySelectorAll('.notif-item').length > 20) list.lastElementChild.remove();
 }
 
-async function updateThreshold() {
-  const val = parseInt(document.getElementById('threshold-input').value);
-  if (isNaN(val) || val < 1) return;
-  try {
-    await fetch(SERVER_URL + '/api/threshold', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ value: val }) });
-    addNotification('ok', '✓ Threshold updated to ' + val + ' items.');
-  } catch (e) {
-    addNotification('danger', '⚠ Failed to update threshold.');
-  }
-}
-
 renderTray();
 connectWS();
 </script>
