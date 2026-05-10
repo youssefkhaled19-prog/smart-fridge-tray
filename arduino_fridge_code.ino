@@ -1,8 +1,3 @@
-// ============================================================
-//  Smart Fridge Tray Monitor — ESP32 Firmware
-//  Hardware: ESP32 + HX711 + Load Cell (5kg)
-//  Protocol: MQTT over WiFi (WAN)
-// ============================================================
 
 #include <WiFi.h>
 #include <PubSubClient.h>
@@ -10,8 +5,8 @@
 #include <ArduinoJson.h>
 
 // ── WiFi Credentials ─────────────────────────
-const char* WIFI_SSID     = "YOUR_WIFI_NAME";
-const char* WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
+const char* WIFI_SSID     = "Youssef K";
+const char* WIFI_PASSWORD = "yoyo1603";
 
 // ── MQTT Broker ──────────────────────────────
 const char* MQTT_BROKER = "smart-fridge-tray-production.up.railway.app";
