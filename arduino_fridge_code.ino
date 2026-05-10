@@ -4,7 +4,7 @@
 #include <HX711.h>
 #include <ArduinoJson.h>
 
-// ── WiFi Credentials ─────────────────────────
+// ── WiFi Credentials 
 const char* WIFI_SSID     = "Youssef K";
 const char* WIFI_PASSWORD = "yoyo1603";
 
@@ -15,20 +15,20 @@ const char* MQTT_CLIENT = "esp32_fridge_tray";
 const char* MQTT_TOPIC  = "fridge/tray/count";
 const char* MQTT_CMD    = "fridge/tray/cmd";
 
-// ── HX711 Pin Wiring ─────────────────────────
+// ── HX711 Pin Wiring 
 #define HX711_DT   32
 #define HX711_SCK  26
 
-// ── Calibration & Item Settings ──────────────
+// ── Calibration & Item Settings 
 float CALIBRATION_FACTOR = -7050.0;
 float SINGLE_ITEM_WEIGHT = 150.0;
 int   ALERT_THRESHOLD    = 2;
 
-// ── Timing ───────────────────────────────────
+// ── Timing 
 const unsigned long PUBLISH_INTERVAL = 5000;
 unsigned long lastPublish = 0;
 
-// ── Objects ──────────────────────────────────
+// ── Objects 
 HX711 scale;
 WiFiClient espClient;
 PubSubClient mqtt(espClient);
